@@ -40,6 +40,53 @@ pub struct MemorySet {
 }
 
 impl MemorySet {
+    ///mmap
+    pub fn mmap(&mut self,start: usize, len: usize, port: usize) -> isize{
+        let  vpnrange = VPNRange::new(VirtAddr::from(start).floor(), VirtAddr::from(start+len).ceil());
+        for vpn in vpnrange{
+            if let Some(pte) = self.page_table.translate(vpn) {
+                if pte.is_valid() {
+                    debug!("map on already mapped vpn {:?}", vpn);
+                    return -1;
+                }
+            }
+        }
+        let mut map_per = MapPermission::U;
+        if port & 0b0000_0001 != 0{
+            map_per|=MapPermission::R;
+        }
+        if  port & 0b0000_0010 != 0{
+            map_per|=MapPermission::W;
+        }
+        if  port & 0b0000_0100 != 0{
+            map_per|=MapPermission::X;
+        }
+        println!("start_va:{:#x}~end_va:{:#x} map_perm:{:#x}",start,start+len,map_per);
+        self.insert_framed_area(VirtAddr::from(start), VirtAddr::from(start + len), map_per);
+        0
+
+    }
+    ///munmap
+    pub fn munmap(&mut self,start: usize,len: usize)->isize{
+        let  vpnrange = VPNRange::new(VirtAddr::from(start).floor(), VirtAddr::from(start+len).ceil());
+        for vpn in vpnrange{
+            if let Some(pte) = self.page_table.translate(vpn) {
+                if !pte.is_valid() {
+                    return -1;
+                }
+            } else {
+                return -1;
+            }
+        }
+        for vpn in vpnrange{
+            for area in &mut self.areas{
+                if vpn < area.vpn_range.get_end() && vpn >= area.vpn_range.get_start(){
+                    area.unmap_one(&mut self.page_table, vpn);
+                }
+            }
+        }
+        0
+    }
     /// Create a new empty `MemorySet`.
     pub fn new_bare() -> Self {
         Self {
@@ -263,6 +310,7 @@ impl MemorySet {
         }
     }
 }
+
 /// map area structure, controls a contiguous piece of virtual memory
 pub struct MapArea {
     vpn_range: VPNRange,

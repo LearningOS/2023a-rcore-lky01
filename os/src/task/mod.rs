@@ -13,7 +13,7 @@ mod context;
 mod switch;
 #[allow(clippy::module_inception)]
 mod task;
-
+use crate::timer::get_time_us;
 use crate::loader::{get_app_data, get_num_app};
 use crate::sync::UPSafeCell;
 use crate::trap::TrapContext;
@@ -140,6 +140,9 @@ impl TaskManager {
             let mut inner = self.inner.exclusive_access();
             let current = inner.current_task;
             inner.tasks[next].task_status = TaskStatus::Running;
+            if inner.tasks[next].start_time == 0{
+                inner.tasks[next].start_time = get_time_us();
+            }
             inner.current_task = next;
             let current_task_cx_ptr = &mut inner.tasks[current].task_cx as *mut TaskContext;
             let next_task_cx_ptr = &inner.tasks[next].task_cx as *const TaskContext;
@@ -152,6 +155,44 @@ impl TaskManager {
         } else {
             panic!("All applications completed!");
         }
+    }
+    ///1
+     fn mmap(&self,start: usize, len: usize, port: usize) -> isize{
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].memory_set.mmap(start, len, port)
+
+
+     }
+     ///
+     fn munmap(&self,start: usize,len: usize)->isize{
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].memory_set.munmap(start, len)
+     }
+     ///
+     fn get_current_task_control_block_start_time(&self)->usize{
+        let inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].start_time
+    }
+    ///
+fn get_current_status(&self)->TaskStatus{
+        let inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].task_status
+    }
+    ///
+    fn add_syscall_times(&self,syscall_id:usize){
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].syscall_times[syscall_id] += 1;
+    }
+    ///
+    fn get_syscall_times(&self)->[u32;500]{
+        let inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].syscall_times
     }
 }
 
@@ -201,4 +242,28 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 /// Change the current 'Running' task's program break
 pub fn change_program_brk(size: i32) -> Option<usize> {
     TASK_MANAGER.change_current_program_brk(size)
+}
+///
+pub fn  mmap(start: usize, len: usize, port: usize) -> isize{
+    TASK_MANAGER.mmap(start, len, port)
+}
+///
+pub fn munmap(start: usize,len: usize)->isize{
+    TASK_MANAGER.munmap(start, len)
+}
+///
+pub fn get_current_start_time()->usize{
+    TASK_MANAGER.get_current_task_control_block_start_time()
+}
+///
+pub fn get_current_status()->TaskStatus{
+    TASK_MANAGER.get_current_status()
+}
+///
+pub fn add_syscall_times(syscall_id:usize){
+    TASK_MANAGER.add_syscall_times(syscall_id);
+}
+///
+pub fn get_syscall_times()->[u32;500]{
+    TASK_MANAGER.get_syscall_times()
 }
