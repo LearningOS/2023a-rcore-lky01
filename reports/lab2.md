@@ -4,7 +4,7 @@
 
 2.此外，我也参考了 以下资料 ，还在代码中对应的位置以注释形式记录了具体的参考来源及内容：
 
-rCore-Tutorial-Guide 2023a文档 往期训练营rcore tutorial视频讲解:https://cloud.tsinghua.edu.cn/f/17a7c9d9b57f4838ae5f/
+rCore-Tutorial-Guide 2023a文档 往期训练营rcore tutorial视频讲解：(https://cloud.tsinghua.edu.cn/f/d44189eff077452e99a5/)
  https://github.com/LearningOS/rust-based-os-comp2023/blob/main/relatedinfo.md 
 3.我独立完成了本次实验除以上方面之外的所有工作，包括代码与文档。 我清楚地知道，从以上方面获得的信息在一定程度上降低了实验难度，可能会影响起评分。
 
