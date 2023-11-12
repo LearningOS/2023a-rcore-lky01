@@ -9,6 +9,7 @@ use alloc::sync::{Arc, Weak};
 use alloc::vec::Vec;
 use core::cell::RefMut;
 
+
 /// Task control block structure
 ///
 /// Directly save the contents that will not change during running
@@ -68,6 +69,11 @@ pub struct TaskControlBlockInner {
 
     /// Program break
     pub program_brk: usize,
+    ///
+    pub task_priority: usize,   
+    ///                     
+    pub task_stride: usize,   
+    
 }
 
 impl TaskControlBlockInner {
@@ -118,6 +124,9 @@ impl TaskControlBlock {
                     exit_code: 0,
                     heap_bottom: user_sp,
                     program_brk: user_sp,
+                    task_priority: 16,
+                    task_stride: 0,
+                   
                 })
             },
         };
@@ -150,7 +159,10 @@ impl TaskControlBlock {
         inner.trap_cx_ppn = trap_cx_ppn;
         // initialize base_size
         inner.base_size = user_sp;
+        //
+        inner.task_priority = 16;
         // initialize trap_cx
+       
         let trap_cx = inner.get_trap_cx();
         *trap_cx = TrapContext::app_init_context(
             entry_point,
@@ -191,6 +203,9 @@ impl TaskControlBlock {
                     exit_code: 0,
                     heap_bottom: parent_inner.heap_bottom,
                     program_brk: parent_inner.program_brk,
+                    task_priority: parent_inner.task_priority,
+                    task_stride: parent_inner.task_stride,
+                   
                 })
             },
         });

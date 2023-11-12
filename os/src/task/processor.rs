@@ -44,9 +44,26 @@ impl Processor {
     pub fn current(&self) -> Option<Arc<TaskControlBlock>> {
         self.current.as_ref().map(Arc::clone)
     }
+    ///
+    fn  mmap(&self,_start: usize, _len: usize, _port: usize) -> isize{
+        let task = self.current().unwrap();
+            let mut task_inner = task.inner_exclusive_access();
+            task_inner.memory_set.mmap(_start,_len,_port)
+        
+    }
+    ///
+     fn munmap(&self,_start: usize,_len: usize)->isize{
+        let task = self.current().unwrap();
+            let mut task_inner = task.inner_exclusive_access();
+            task_inner.memory_set.munmap(_start,_len)
+        
+    }
+    
+      
 }
 
 lazy_static! {
+    ///
     pub static ref PROCESSOR: UPSafeCell<Processor> = unsafe { UPSafeCell::new(Processor::new()) };
 }
 
@@ -109,3 +126,17 @@ pub fn schedule(switched_task_cx_ptr: *mut TaskContext) {
         __switch(switched_task_cx_ptr, idle_task_cx_ptr);
     }
 }
+///
+pub fn  mmap(_start: usize, _len: usize, _port: usize) -> isize{
+    PROCESSOR.exclusive_access().mmap(_start,_len,_port)
+    
+}
+///
+pub fn munmap(_start: usize,_len: usize)->isize{
+   
+    PROCESSOR.exclusive_access().munmap(_start,_len)
+}
+
+
+
+

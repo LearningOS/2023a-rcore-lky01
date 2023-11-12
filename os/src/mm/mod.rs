@@ -24,3 +24,11 @@ pub fn init() {
     frame_allocator::init_frame_allocator();
     KERNEL_SPACE.exclusive_access().activate();
 }
+/// virtual address->physical-address
+pub fn translated_to_physical_address(token: usize, ptr: *const u8) -> usize{
+    let pagetable = PageTable::from_token(token);
+    let  viradd = VirtAddr::from(ptr as usize);
+    let ppn = pagetable.find_pte(viradd.floor()).unwrap().ppn();
+    PhysAddr::from(ppn).0 + viradd.page_offset()
+
+}
